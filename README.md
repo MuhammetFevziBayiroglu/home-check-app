@@ -3,6 +3,7 @@
 # Home Check 
 
 Home Check is a wearable application built for HarmonyOS. It helps users avoid forgetting essential items when leaving home. The app stores data using relationalStore from @kit.ArkData, allowing users to add, update, delete, and view items. On the Check Home screen, saved items are displayed one by one. By holding the screen for 5 seconds, users can cycle through the list and quickly check what they might forget.
+
 # Preview
 
 <div>

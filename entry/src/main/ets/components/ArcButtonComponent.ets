@@ -1,19 +1,22 @@
 import {
-  LengthMetrics, LengthUnit,
-  ArcButton, ArcButtonOptions, ArcButtonStatus, ArcButtonStyleMode, ArcButtonPosition
+  LengthMetrics,
+  LengthUnit,
+  ArcButton,
+  ArcButtonOptions,
+  ArcButtonStatus,
+  ArcButtonStyleMode,
+  ArcButtonPosition
 } from '@kit.ArkUI';
 
 @Component
 export struct ArcButtonComponent {
-  @Consume('navStack') navStack: NavPathStack;   // 🔥 parent’tan stack al
+  @Consume('navStack') navStack: NavPathStack;
   @Prop label: string = 'Button';
   @Prop arcPosition?: ArcButtonPosition;
   @Prop styleMode: ArcButtonStyleMode = ArcButtonStyleMode.EMPHASIZED_LIGHT;
   @Prop status: ArcButtonStatus = ArcButtonStatus.NORMAL;
   @Prop fontSize: number = 15;
   @Prop shadowEnabled: boolean = true;
-
-  // 🔁 router yerine sayfa adı
   @Prop routeName?: string;
 
   build() {

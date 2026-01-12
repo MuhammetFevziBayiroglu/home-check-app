@@ -13,14 +13,16 @@ export struct IndexNavHost {
   }
 
   build() {
-    Navigation(this.navStack) { }
+    Navigation(this.navStack) {
+    }
     .hideNavBar(true)
     .width('100%')
     .height('100%');
   }
 }
 
-@Builder export function IndexHomeBuilder() {
+@Builder
+export function IndexHomeBuilder() {
   IndexHome();
 }
 

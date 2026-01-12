@@ -1,59 +1,15 @@
 import dbUtils, { ItemRow } from '../common/utils/DBUtils';
 import commonUtils from '../common/utils/CommonUtils';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { LoadingCard, DoneCard } from '../components/ItemBuilders';
+import { ItemCardView } from '../components/ItemCardView';
+import { PageItem } from '../model/PageItem';
+
+type LogArg = string | number | boolean;
 
 @Builder
 export function CheckHomeBuilder(name?: string, param?: Object) {
   CheckHome();
-}
-
-interface PageItem {
-  cat: string;
-  item: ItemRow;
-}
-
-type LogArg = string | number | boolean;
-
-@Component
-struct ItemCardView {
-  @Prop cat: string;
-  @Prop it: ItemRow;
-  @Prop isCritical: boolean;
-
-  build(): void {
-    Column({ space: 10 }) {
-      Text(this.cat)
-        .fontSize(13)
-        .fontColor('#6B7280')
-        .textAlign(TextAlign.Center)
-
-      Text(this.it.name || 'Unnamed')
-        .fontSize(26)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#111827')
-        .textAlign(TextAlign.Center)
-
-      if (this.it.note && this.it.note.trim().length > 0) {
-        Text(this.it.note)
-          .fontSize(13)
-          .fontColor('#374151')
-          .textAlign(TextAlign.Center)
-          .maxLines(3)
-      }
-
-      Text('Press & hold 5s to Check')
-        .fontSize(12)
-        .fontColor('#6B7280')
-        .margin({ top: 6 })
-
-    }
-    .alignItems(HorizontalAlign.Center)
-    .justifyContent(FlexAlign.Center)
-    .padding(16)
-    .width('82%')
-    .backgroundColor(Color.Transparent)
-    .borderRadius(this.isCritical ? 0 : 16)
-  }
 }
 
 @Component
@@ -62,8 +18,8 @@ export struct CheckHome {
   private static readonly HOLD_MS: number = 5000;
   private static readonly TIMEOUT_MS: number = 5000;
   private readonly watchSize: string = '466px';
-
   private readonly DEBUG: boolean = true;
+
   private dbg(...args: LogArg[]): void {
     if (!this.DEBUG) {
       return;
@@ -75,21 +31,16 @@ export struct CheckHome {
     console.info('[CheckHome]', ...out);
   }
 
-
   @State private loading: boolean = false;
   @State private pages: PageItem[] = [];
   @State private pageIndex: number = 0;
-
   @State private holdProgress: number = 0;
   @State private holding: boolean = false;
   private holdTimerId: number = -1;
-
   private isFetching: boolean = false;
   private lastLoadStamp: number = 0;
-
   private dbReady: boolean = false;
   private dbInitInProgress: boolean = false;
-
   private holdStartIndex: number = -1;
   private holdFinishedByTimer: boolean = false;
 
@@ -112,7 +63,11 @@ export struct CheckHome {
           reject(new Error('TIMEOUT'));
         }
       }, ms);
-      p.then(v => { settled = true; clearTimeout(timer); resolve(v); })
+      p.then(v => {
+        settled = true;
+        clearTimeout(timer);
+        resolve(v);
+      })
         .catch((e: Error) => {
           settled = true;
           clearTimeout(timer);
@@ -138,7 +93,6 @@ export struct CheckHome {
     }
   }
 
-
   private buildPagesFrom(rows: ItemRow[]): PageItem[] {
     const pages: PageItem[] = [];
     for (let i = 0; i < rows.length; i++) {
@@ -156,7 +110,6 @@ export struct CheckHome {
     }
     return pages;
   }
-
 
   private async loadItems(allowRetry: boolean = false): Promise<void> {
     if (this.isFetching) {
@@ -183,13 +136,19 @@ export struct CheckHome {
       this.dbg('DB rows count =', rows.length);
       for (let i = 0; i < rows.length; i++) {
         const r: ItemRow = rows[i];
-        this.dbg(`row[${i}] id=${r.id} name="${r.name}" cat="${r.category}" crit=${Number(r.isCritical)}`);
+        this.dbg(
+          `row[${i}] id=${r.id} name=${r.name} cat=${r.category} crit=${Number(r.isCritical)}`
+        );
+
+
       }
 
       if (allowRetry && rows.length === 0) {
         this.dbg('rows empty, retrying once…');
         await this.withTimeout(
-          new Promise<void>((res) => { setTimeout(res, 150); }),
+          new Promise<void>((res) => {
+            setTimeout(res, 150);
+          }),
           500,
           'retryDelay'
         );
@@ -206,7 +165,10 @@ export struct CheckHome {
       this.dbg('pages count =', this.pages.length);
       for (let i = 0; i < this.pages.length; i++) {
         const p: PageItem = this.pages[i];
-        this.dbg(`page[${i}] cat="${p.cat}" name="${p.item.name}" id=${p.item.id} crit=${Number(p.item.isCritical)}`);
+        this.dbg(
+          `page[${i}] cat=${p.cat} name=${p.item.name} id=${p.item.id} crit=${Number(p.item.isCritical)}`
+        );
+
       }
 
       this.pageIndex = 0;
@@ -297,6 +259,7 @@ export struct CheckHome {
       }
     }, 50);
   }
+
   private finishHold(): void {
     if (!this.holding) {
       this.dbg('finishHold ignored (not holding)');
@@ -345,14 +308,30 @@ export struct CheckHome {
     }
   }
 
+  private getCur(): PageItem | undefined {
+    if (this.pages.length === 0) {
+      return undefined;
+    }
+    if (this.pageIndex < 0 || this.pageIndex >= this.pages.length) {
+      return undefined;
+    }
+    return this.pages[this.pageIndex];
+  }
+
+  private isCurCritical(): boolean {
+    const cur = this.getCur();
+    return !!(cur && Number(cur.item.isCritical) === 1);
+  }
+
   build(): void {
     NavDestination() {
       Stack() {
-        Column() {}
+        Column() {
+        }
         .justifyContent(FlexAlign.Center)
         .width(this.watchSize)
         .height(this.watchSize)
-        .clip(Circle({ width: '100%', height: '100%' }))
+        .clipShape(Circle({ width: '100%', height: '100%' }))
         .backgroundColor(this.isCurCritical() ? '#DD0303' : '#FFFFFF')
 
         Column() {
@@ -372,9 +351,9 @@ export struct CheckHome {
 
         Column() {
           if (this.loading) {
-            this.LoadingCard()
+            LoadingCard()
           } else if (!this.getCur()) {
-            this.DoneCard()
+            DoneCard(this.stack)
           } else {
             Column() {
               ItemCardView({
@@ -389,9 +368,14 @@ export struct CheckHome {
                 this.dbg('onTouch ignored: no current item (pages empty)');
                 return;
               }
-              if (event.type === TouchType.Down) this.startHold();
-              else if (event.type === TouchType.Up) this.cancelHold();
-              else if (event.type === TouchType.Cancel) this.cancelHold();
+              if (event.type === TouchType.Down) {
+                this.startHold();
+              } else if (event.type ===
+              TouchType.Up) {
+                this.cancelHold();
+              } else if (event.type === TouchType.Cancel) {
+                this.cancelHold();
+              }
             })
           }
         }
@@ -410,60 +394,5 @@ export struct CheckHome {
     .onReady((ctx: NavDestinationContext) => {
       this.stack = ctx.pathStack;
     })
-  }
-  private getCur(): PageItem | undefined {
-    if (this.pages.length === 0) {
-      return undefined;
-    }
-    if (this.pageIndex < 0 || this.pageIndex >= this.pages.length) {
-      return undefined;
-    }
-    return this.pages[this.pageIndex];
-  }
-
-  private isCurCritical(): boolean {
-    const cur = this.getCur();
-    return !!(cur && Number(cur.item.isCritical) === 1);
-  }
-
-  @Builder
-  private DoneCard(): void {
-    Column({ space: 12 }) {
-      Text('You Can Check All Items')
-        .fontSize(20)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#111827')
-
-      Button('Done')
-        .type(ButtonType.Capsule)
-        .backgroundColor('#2563EB')
-        .fontColor(Color.White)
-        .onClick((): void => {
-          this.stack.pop({ created: true });
-        })
-    }
-    .alignItems(HorizontalAlign.Center)
-    .justifyContent(FlexAlign.Center)
-    .padding(16)
-    .width('82%')
-    .backgroundColor('#FFFFFF')
-    .borderRadius(16)
-    .shadow({ radius: 8, color: '#11000000', offsetX: 0, offsetY: 2 })
-  }
-
-
-
-  @Builder
-  private LoadingCard(): void {
-    Column({ space: 8 }) {
-      Text('Loading…').fontSize(16).fontColor('#666666')
-    }
-    .alignItems(HorizontalAlign.Center)
-    .justifyContent(FlexAlign.Center)
-    .padding(16)
-    .width('82%')
-    .backgroundColor('#FFFFFF')
-    .borderRadius(16)
-    .shadow({ radius: 8, color: '#11000000', offsetX: 0, offsetY: 2 })
   }
 }

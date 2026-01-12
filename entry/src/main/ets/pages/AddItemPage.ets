@@ -9,7 +9,6 @@ export function AddItemPageBuilder(name?: string, param?: Object) {
 @Component
 export struct AddItemPage {
   private stack: NavPathStack | null = null;
-
   @State name: string = '';
   @State category: string = '';
   @State note: string = '';
@@ -18,11 +17,14 @@ export struct AddItemPage {
   @State errorMsg: string = '';
 
   aboutToAppear() {
-    dbUtils.createDB().catch(() => {});
+    dbUtils.createDB().catch(() => {
+    });
   }
 
   private async onSave() {
-    if (this.saving) return;
+    if (this.saving) {
+      return;
+    }
 
     const trimmedName = (this.name ?? '').trim();
     if (!trimmedName) {
@@ -56,7 +58,7 @@ export struct AddItemPage {
       this.stack?.pop();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      this.errorMsg = 'Save error: ' + msg;
+      this.errorMsg = `Save error: ${msg}`;
       console.error(`[AddItemPage.onSave] ${this.errorMsg}`);
       commonUtils.showToast(this.errorMsg);
     } finally {
@@ -117,7 +119,12 @@ export struct AddItemPage {
                 .backgroundColor(Color.White)
                 .border({ width: 1, color: '#E5E7EB' })
                 .borderRadius(10)
-                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                .padding({
+                  left: 10,
+                  right: 10,
+                  top: 6,
+                  bottom: 6
+                })
             }
 
             Divider().strokeWidth(0.6).color('#E5E7EB').margin({ top: 2, bottom: 2 })
@@ -144,12 +151,26 @@ export struct AddItemPage {
               .backgroundColor(this.saving ? '#9CA3AF' : '#2563EB')
               .fontColor(Color.White)
               .opacity(this.saving ? 0.9 : 1)
-              .shadow({ radius: 12, color: '#26000000', offsetX: 0, offsetY: 2 })
-              .onClick(() => { if (!this.saving) this.onSave(); })
+              .shadow({
+                radius: 12,
+                color: '#26000000',
+                offsetX: 0,
+                offsetY: 2
+              })
+              .onClick(() => {
+                if (!this.saving) {
+                  this.onSave();
+                }
+              })
 
             Blank().height(12)
           }
-          .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+          .padding({
+            left: 16,
+            right: 16,
+            top: 8,
+            bottom: 8
+          })
           .width('100%')
         }
         .scrollBar(BarState.On)

@@ -1,145 +1,14 @@
 import dbUtils, { ItemRow } from '../common/utils/DBUtils';
 import commonUtils from '../common/utils/CommonUtils';
-import { ArcList, ArcListItem, ArcListAttribute, ArcListItemAttribute, ComponentContent,
-  LengthMetrics } from '@kit.ArkUI';
-
+import { EditItemDialog } from '../components/EditItemDialog';
+import { EditItemData } from '../model/EditItemData';
+import { BuildControls, BuildEmpty, BuildItemCard, ItemMenuBuilder } from '../components/MyItemsView';
+import { ArcList,ArcListItem,ArcListAttribute,ArcListItemAttribute,ComponentContent,LengthMetrics } from '@kit.ArkUI';
 
 @Builder
 export function MyItemsPageBuilder(name?: string, param?: Object) {
   MyItemsPage();
 }
-
-interface EditItemData {
-  name: string;
-  category: string;
-  note: string;
-  isCritical: boolean;
-}
-
-@CustomDialog
-struct EditItemDialog {
-  controller?: CustomDialogController;
-
-  name: string = '';
-  category: string = '';
-  note: string = '';
-  isCritical: boolean = false;
-
-  cancel: () => void = () => {};
-  confirm: (data: EditItemData) => void = () => {};
-  @State private touched: boolean = false;
-
-  build(): void {
-    Column() {
-      Scroll() {
-        Column() {
-          Column({ space: 6 }) {
-            Row() {
-              Text('Name *').fontSize(14).fontColor('#111827')
-            }
-            TextInput({ text: this.name, placeholder: 'e.g., Windows, Iron…' })
-              .height(40)
-              .maxLines(1)
-              .fontColor(Color.Black)
-              .onChange((v: string): void => {
-                this.name = v;
-                this.touched = true;
-              })
-              .border({
-                width: 1,
-                color: (this.touched && (this.name.trim().length === 0)) ? '#EF4444'
-                  : (this.name.trim().length > 0 ? '#10B981' : '#E5E7EB')
-              })
-              .borderRadius(10)
-              .padding({ left: 10, right: 10 })
-            if (this.touched && this.name.trim().length === 0) {
-              Text('Name is required.').fontSize(12).fontColor('#DC2626')
-            }
-          }
-
-          Column({ space: 6 }) {
-            Text('Category').fontSize(14).fontColor('#111827')
-            TextInput({ text: this.category, placeholder: 'Optional (e.g., Kitchen)' })
-              .height(40)
-              .maxLines(1)
-              .fontColor(Color.Black)
-              .onChange((v: string): void => { this.category = v; })
-              .border({ width: 1, color: '#E5E7EB' })
-              .borderRadius(10)
-              .padding({ left: 10, right: 10 })
-          }
-
-          Column({ space: 6 }) {
-            Text('Note').fontSize(14).fontColor('#111827')
-            TextInput({ text: this.note, placeholder: 'Optional note' })
-              .height(96)
-              .maxLines(4)
-              .fontColor(Color.Black)
-              .onChange((v: string): void => { this.note = v; })
-              .border({ width: 1, color: '#E5E7EB' })
-              .borderRadius(10)
-              .padding({ left: 10, right: 10, top: 8, bottom: 8 })
-          }
-
-          Row({ space: 8 }) {
-            Toggle({ type: ToggleType.Switch, isOn: this.isCritical })
-              .onChange((val: boolean): void => { this.isCritical = val; })
-            Text(this.isCritical ? 'Marked as critical' : 'Mark as critical')
-              .fontSize(14).fontColor('#111827')
-          }
-          .alignItems(VerticalAlign.Center)
-
-          Text('Changes will be saved for this item.')
-            .fontSize(12).fontColor('#6B7280').margin({ top: -2 })
-        }
-        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-        .width('100%')
-      }
-      .layoutWeight(1)
-      .width('100%')
-
-      Row({ space: 10 }) {
-        Button('Cancel')
-          .type(ButtonType.Capsule)
-          .backgroundColor('#F3F4F6')
-          .fontColor('#111827')
-          .onClick((): void => {
-            this.cancel();
-            this.controller?.close();
-          })
-
-        Button('Save')
-          .type(ButtonType.Capsule)
-          .backgroundColor(this.name.trim().length > 0 ? '#2563EB' : '#9CA3AF')
-          .fontColor(Color.White)
-          .enabled(this.name.trim().length > 0)
-          .onClick((): void => {
-            const trimmed: string = (this.name ?? '').trim();
-            if (!trimmed) {
-              this.touched = true;
-              return;
-            }
-            this.confirm({
-              name: trimmed,
-              category: (this.category ?? '').trim(),
-              note: (this.note ?? '').trim(),
-              isCritical: this.isCritical
-            });
-            this.controller?.close();
-          })
-      }
-      .justifyContent(FlexAlign.End)
-      .padding({ left: 16, right: 16, bottom: 14 })
-      .backgroundColor('#FFFFFF')
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor('#FFFFFF')
-  }
-}
-
-
-
 
 @Builder
 function myItemsHeader(): void {
@@ -158,18 +27,10 @@ export struct MyItemsPage {
   @State items: ItemRow[] = [];
   @State loading: boolean = false;
   @State onlyCritical: boolean = false;
-
-  @State editName: string = '';
-  @State editCategory: string = '';
-  @State editNote: string = '';
-  @State editCritical: boolean = false;
-
   private editingId: number | null = null;
   private editDialog: CustomDialogController | null = null;
-
   private readonly watchSize: string = '466px';
   private readonly listSize: string = '414px';
-
   private ctx?: UIContext;
   private headerCc?: ComponentContent<object>;
 
@@ -177,6 +38,17 @@ export struct MyItemsPage {
     this.ctx = this.getUIContext();
     this.headerCc = new ComponentContent<object>(this.ctx as UIContext, wrapBuilder(myItemsHeader));
     void this.loadItems();
+  }
+
+  @Builder
+  LocalItemMenu(row: ItemRow) {
+    ItemMenuBuilder(
+      row,
+      (r: ItemRow) => this.openEditDialog(r),
+      (r: ItemRow) => {
+        void this.onDelete(r.id)
+      }
+    )
   }
 
   private async loadItems(): Promise<void> {
@@ -232,9 +104,8 @@ export struct MyItemsPage {
     const n = (r.name || '').split(' ').join('_');
     const c = (r.category ? r.category : '').split(' ').join('_');
     const no = (r.note ? r.note : '').split(' ').join('_');
-    return 'item-' + r.id + '-' + r.isCritical + '-' + n + '-' + c + '-' + no;
+    return `item-${r.id}-${r.isCritical}-${n}-${c}-${no}`;
   }
-
 
   private getRowFromKey(key: string): ItemRow | undefined {
     if (!key.startsWith('item-')) {
@@ -263,121 +134,8 @@ export struct MyItemsPage {
     return undefined;
   }
 
-
-
-  @Builder
-  private buildControls(): void {
-    Row({ space: 8 }) {
-      Image($r('app.media.refresh_ic'))
-        .opacity(this.loading ? 0.6 : 1)
-        .width(25).height(25)
-        .onClick((): void => {
-          if (!this.loading) {
-            void this.loadItems();
-          }
-        })
-
-      Row({ space: 6 }) {
-        Toggle({ type: ToggleType.Switch, isOn: this.onlyCritical })
-          .onChange((v: boolean): void => {
-            this.onlyCritical = v;
-            void this.loadItems();
-          })
-        Text('Critical only').fontSize(13).fontColor('#666666')
-      }
-    }
-    .width('100%')
-    .padding(12)
-    .backgroundColor('#FFFFFF')
-    .borderRadius(16)
-    .shadow({ radius: 8, color: '#11000000', offsetX: 0, offsetY: 2 })
-  }
-
-
-  @Builder
-  private buildEmpty(): void {
-    Column({ space: 8 }) {
-      Text('No items yet').fontSize(16).fontColor('#666')
-      Text('Add a new item and come back.').fontSize(13).fontColor('#999')
-    }
-    .width('100%')
-    .padding(24)
-    .alignItems(HorizontalAlign.Center)
-    .backgroundColor('#FFFFFF')
-    .borderRadius(16)
-    .shadow({ radius: 8, color: '#11000000', offsetX: 0, offsetY: 2 })
-  }
-  @Builder
-  private buildItemCard(row: ItemRow): void {
-    Column({ space: 8 }) {
-      Row() {
-        Text(row.name || 'Unnamed')
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#111827')
-
-        Blank()
-
-        if (row.isCritical === 1) {
-          Row() {
-            Text('CRITICAL')
-              .fontSize(11)
-              .fontWeight(FontWeight.Medium)
-              .fontColor('#B91C1C')
-          }
-          .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-          .backgroundColor('#FEE2E2')
-          .borderRadius(999)
-          .border({ color: '#FCA5A5', width: 0.6 })
-          .margin({ right: 8 })
-        }
-
-        Button('•••')
-          .type(ButtonType.Circle)
-          .height(32)
-          .width(32)
-          .fontSize(16)
-          .backgroundColor('#F3F4F6')
-          .fontColor('#111827')
-          .onClick((): void => this.showItemActions(row))
-          .bindMenu(this.makeMenuForRow(row))
-      }
-      .width('100%')
-
-      if (row.category) {
-        Row() {
-          Text(row.category as string)
-            .fontSize(12)
-            .fontColor('#374151')
-        }
-        .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-        .backgroundColor('#E5E7EB')
-        .borderRadius(999)
-        .alignItems(VerticalAlign.Center)
-        .justifyContent(FlexAlign.Start)
-      }
-
-      if (row.note) {
-        Text(row.note as string)
-          .fontSize(13)
-          .fontColor('#374151')
-          .maxLines(3)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-      }
-    }
-    .width('100%')
-    .padding({ left: 14, right: 14, top: 12, bottom: 12 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(14)
-    .border({ color: '#F3F4F6', width: 1 })
-    .shadow({ radius: 10, color: '#16000000', offsetX: 0, offsetY: 3 })
-  }
-
-
-
-
   private showItemActions(row: ItemRow): void {
-    AlertDialog.show({
+    this.ctx?.showAlertDialog({
       title: 'Item actions',
       subtitle: row.name,
       message: 'Select an action',
@@ -387,34 +145,24 @@ export struct MyItemsPage {
       offset: { dx: 0, dy: -20 },
       primaryButton: {
         value: 'Delete',
-        action: (): void => { void this.onDelete(row.id); }
+        action: (): void => {
+          void this.onDelete(row.id);
+        }
       },
       secondaryButton: {
         value: 'Edit',
-        action: (): void => { this.openEditDialog(row); }
+        action: (): void => {
+          this.openEditDialog(row);
+        }
       },
-      cancel: (): void => {},
+      cancel: (): void => {
+      },
       onWillDismiss: (a: DismissDialogAction): void => {
         if (a.reason === DismissReason.PRESS_BACK || a.reason === DismissReason.TOUCH_OUTSIDE) {
           a.dismiss();
         }
       }
     })
-  }
-
-  makeMenuForRow(row: ItemRow): CustomBuilder {
-    return (): void => this.itemMenu(row);
-  }
-
-  @Builder
-  private itemMenu(row: ItemRow): void {
-    Menu() {
-      MenuItem({ content: 'Edit' })
-        .onClick((): void => this.openEditDialog(row))
-
-      MenuItem({ content: 'Delete' })
-        .onClick((): void => { void this.onDelete(row.id) })
-    }
   }
 
   openEditDialog(row: ItemRow): void {
@@ -425,8 +173,11 @@ export struct MyItemsPage {
         category: (row.category ?? '') as string,
         note: (row.note ?? '') as string,
         isCritical: row.isCritical === 1,
-        cancel: (): void => {},
-        confirm: (data: EditItemData): void => { void this.applyEdit(row.id, data) }
+        cancel: (): void => {
+        },
+        confirm: (data: EditItemData): void => {
+          void this.applyEdit(row.id, data)
+        }
       }),
       autoCancel: true,
       alignment: DialogAlignment.Bottom,
@@ -474,6 +225,7 @@ export struct MyItemsPage {
     };
     return updated;
   }
+
   private async onDelete(id: number): Promise<void> {
     const ok: boolean = await dbUtils.deleteItem(id);
     if (ok) {
@@ -485,57 +237,73 @@ export struct MyItemsPage {
   }
 
   build(): void {
-    NavDestination(){
+    NavDestination() {
+      Stack() {
+        Column() {
+        }
+        .justifyContent(FlexAlign.Center)
+        .width(this.watchSize)
+        .height(this.watchSize)
+        .clipShape(new Circle({ width: '100%', height: '100%' }))
+        .backgroundColor(Color.White)
 
-    Stack() {
-      Column() { }
-      .justifyContent(FlexAlign.Center)
+        if (this.headerCc) {
+          ArcList({ initialIndex: 0, header: this.headerCc as ComponentContent<object> }) {
+            ForEach(this.getSectionKeys(),
+              (key: string, idx: number): void => {
+                ArcListItem() {
+                  Column() {
+                    if (key === 'controls') {
+                      BuildControls(
+                        this.loading,
+                        this.onlyCritical,
+                        () => {
+                          void this.loadItems()
+                        },
+                        (v: boolean) => {
+                          this.onlyCritical = v;
+                          void this.loadItems();
+                        }
+                      )
+                    } else if (key === 'empty') {
+                      BuildEmpty()
+                    } else if (this.getRowFromKey(key) !== undefined) {
+                      BuildItemCard(
+                        this.getRowFromKey(key) as ItemRow,
+                        (r: ItemRow) => this.showItemActions(r),
+                        (): void => {
+                          this.LocalItemMenu(this.getRowFromKey(key) as ItemRow)
+                        }
+                      )
+                    } else {
+                      BuildEmpty()
+                    }
+                  }
+                  .width(this.listSize)
+                }
+                .align(Alignment.Center)
+              },
+              (key: string, idx: number): string => key
+            )
+          }
+          .space(LengthMetrics.px(10))
+          .borderRadius(this.watchSize)
+          .focusable(true)
+          .focusOnTouch(true)
+          .defaultFocus(true)
+        } else {
+          Column() {
+            Text('Loading…').fontSize(16)
+          }
+          .alignItems(HorizontalAlign.Center)
+        }
+      }
+      .align(Alignment.Center)
       .width(this.watchSize)
       .height(this.watchSize)
-      .clip(new Circle({ width: '100%', height: '100%' }))
-      .backgroundColor(Color.White)
-
-      if (this.headerCc) {
-        ArcList({ initialIndex: 0, header: this.headerCc as ComponentContent<object> }) {
-          ForEach(this.getSectionKeys(),
-            (key: string, idx: number): void => {
-              ArcListItem() {
-                Column() {
-                  if (key === 'controls') {
-                    this.buildControls();
-                  } else if (key === 'empty') {
-                    this.buildEmpty();
-                  } else if (this.getRowFromKey(key) !== undefined) {
-                    this.buildItemCard(this.getRowFromKey(key) as ItemRow);
-                  } else {
-                    this.buildEmpty();
-                  }
-                }
-                .width(this.listSize)
-              }
-              .align(Alignment.Center)
-            },
-            (key: string, idx: number): string => key
-          )
-        }
-        .space(LengthMetrics.px(10))
-        .borderRadius(this.watchSize)
-        .focusable(true)
-        .focusOnTouch(true)
-        .defaultFocus(true)
-      } else {
-        Column() {
-          Text('Loading…').fontSize(16)
-        }
-        .alignItems(HorizontalAlign.Center)
-      }
-    }
-    .align(Alignment.Center)
-    .width(this.watchSize)
-    .height(this.watchSize)
-    .border({ color: Color.Black, width: 1 })
-    .borderRadius(this.watchSize)
-    .backgroundColor('#F5F6F8')
+      .border({ color: Color.Black, width: 1 })
+      .borderRadius(this.watchSize)
+      .backgroundColor('#F5F6F8')
     }
     .hideTitleBar(true)
     .onReady((ctx: NavDestinationContext) => {

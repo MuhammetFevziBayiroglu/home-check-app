@@ -71,7 +71,7 @@ export class DBUtils {
             Logger.info('items table ready.');
             resolve();
           } catch (e) {
-            Logger.error('DDL failed: ' + String(e));
+            Logger.error(`DDL failed: ${String(e)}`);
             reject(new Error('DDL failed'));
           }
         }
@@ -113,7 +113,7 @@ export class DBUtils {
       Logger.info('insert done.');
       return true;
     } catch (e) {
-      Logger.error('insert failed: ' + String(e));
+      Logger.error(`insert failed: ${String(e)}`);
       return false;
     }
   }
@@ -140,12 +140,12 @@ export class DBUtils {
           name: resultSet.getString(nameIdx),
           category: resultSet.isColumnNull(catIdx) ? null : resultSet.getString(catIdx),
           note: resultSet.isColumnNull(noteIdx) ? null : resultSet.getString(noteIdx),
-          isCritical: Number(resultSet.getLong(critIdx)),
+          isCritical: Number(resultSet.getLong(critIdx))
         });
       }
       resultSet.close();
     } catch (e) {
-      Logger.error('queryAll failed: ' + String(e));
+      Logger.error(`queryAll failed: ${String(e)}`);
     }
 
     return rows;
@@ -190,7 +190,7 @@ export class DBUtils {
       Logger.info('update done.');
       return true;
     } catch (e) {
-      Logger.error('update failed: ' + String(e));
+      Logger.error(`update failed: ${String(e)}`);
       return false;
     }
   }
@@ -208,7 +208,7 @@ export class DBUtils {
       Logger.info('delete done.');
       return true;
     } catch (e) {
-      Logger.error('delete failed: ' + String(e));
+      Logger.error(`delete failed: ${String(e)}`);
       return false;
     }
   }
