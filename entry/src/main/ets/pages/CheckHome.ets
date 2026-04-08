@@ -351,12 +351,42 @@ export struct CheckHome {
     NavDestination() {
       Stack() {
         Column() {
+          if (this.loading) {
+            LoadingCard()
+          } else if (!this.getCur()) {
+            DoneCard(this.stack)
+          } else {
+            Column() {
+              ItemCardView({
+                cat: this.getCur()!.cat,
+                it: this.getCur()!.item,
+                isCritical: this.isCurCritical()
+              })
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+          }
         }
         .justifyContent(FlexAlign.Center)
         .width(this.watchSize)
         .height(this.watchSize)
         .clipShape(Circle({ width: '100%', height: '100%' }))
         .backgroundColor(this.isCurCritical() ? '#DD0303' : '#FFFFFF')
+        .onTouch((event: TouchEvent) => {
+          const cur = this.getCur();
+          if (!cur) {
+            this.dbg('onTouch ignored: no current item (pages empty)');
+            return;
+          }
+          if (event.type === TouchType.Down) {
+            this.startHold();
+          } else if (event.type === TouchType.Up) {
+            this.cancelHold();
+          } else if (event.type === TouchType.Cancel) {
+            this.cancelHold();
+          }
+        })
 
         Column() {
           Progress({ value: this.holdProgress, total: 100, type: ProgressType.Ring })
@@ -372,54 +402,14 @@ export struct CheckHome {
         .alignItems(HorizontalAlign.Center)
         .justifyContent(FlexAlign.Center)
         .visibility(this.holding ? Visibility.Visible : Visibility.Hidden)
+        .hitTestBehavior(HitTestMode.None)
 
-        Column() {
-          if (this.loading) {
-            LoadingCard()
-          } else if (!this.getCur()) {
-            DoneCard(this.stack)
-          } else {
-            Column() {
-              ItemCardView({
-                cat: this.getCur()!.cat,
-                it: this.getCur()!.item,
-                isCritical: this.isCurCritical()
-              })
-            }
-            .onTouch((event: TouchEvent) => {
-              const cur = this.getCur();
-              if (!cur) {
-                this.dbg('onTouch ignored: no current item (pages empty)');
-                return;
-              }
-              if (event.type === TouchType.Down) {
-                this.startHold();
-              } else if (event.type ===
-              TouchType.Up) {
-                this.cancelHold();
-              } else if (event.type === TouchType.Cancel) {
-                this.cancelHold();
-              }
-            })
-          }
-        }
-        .width('100%')
-        .height('100%')
-        .alignItems(HorizontalAlign.Center)
-        .justifyContent(FlexAlign.Center)
-
-        Column() {
-          Image($r('app.media.settings_ic'))
-            .width(24)
-            .height(24)
-            .margin({ top: 40 })
-            .onClick(() => this.showHoldTimeSettings())
-        }
-        .width('100%')
-        .height('100%')
-        .alignItems(HorizontalAlign.Center)
-        .justifyContent(FlexAlign.Start)
-        .hitTestBehavior(HitTestMode.Transparent)
+        Image($r('app.media.settings_ic'))
+          .width(28)
+          .height(28)
+          .position({ x: '50%', y: 40 })
+          .translate({ x: '-50%' })
+          .onClick(() => this.showHoldTimeSettings())
       }
       .align(Alignment.Center)
       .width(this.watchSize)
