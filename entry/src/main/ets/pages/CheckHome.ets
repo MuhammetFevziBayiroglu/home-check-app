@@ -15,7 +15,7 @@ export function CheckHomeBuilder(name?: string, param?: Object) {
 @Component
 export struct CheckHome {
   private stack!: NavPathStack;
-  private static readonly HOLD_MS: number = 5000;
+  @StorageLink('holdTime') holdTime: number = 5000;
   private static readonly TIMEOUT_MS: number = 5000;
   private readonly watchSize: string = '466px';
   private readonly DEBUG: boolean = true;
@@ -233,7 +233,7 @@ export struct CheckHome {
     this.holdStartIndex = this.pageIndex;
     this.holdFinishedByTimer = false;
     const start: number = Date.now();
-    const total: number = CheckHome.HOLD_MS;
+    const total: number = this.holdTime;
 
     this.dbg('startHold DOWN at index', this.pageIndex, 'total ms=', total);
 
@@ -323,6 +323,21 @@ export struct CheckHome {
     return !!(cur && Number(cur.item.isCritical) === 1);
   }
 
+  private showHoldTimeSettings(): void {
+    const options: string[] = ['1s', '2s', '3s', '5s', '10s'];
+    const values: number[] = [1000, 2000, 3000, 5000, 10000];
+
+    this.getUIContext().getPromptAction().showActionMenu({
+      title: 'Hold time',
+      buttons: options.map(o => ({ text: o, color: '#2563EB' }))
+    }).then(res => {
+      if (res.index >= 0 && res.index < values.length) {
+        this.holdTime = values[res.index];
+        commonUtils.showToast(`Hold time set to ${options[res.index]}`);
+      }
+    });
+  }
+
   build(): void {
     NavDestination() {
       Stack() {
@@ -383,6 +398,19 @@ export struct CheckHome {
         .height('100%')
         .alignItems(HorizontalAlign.Center)
         .justifyContent(FlexAlign.Center)
+
+        Column() {
+          Image($r('app.media.settings_ic'))
+            .width(24)
+            .height(24)
+            .margin({ top: 40 })
+            .onClick(() => this.showHoldTimeSettings())
+        }
+        .width('100%')
+        .height('100%')
+        .alignItems(HorizontalAlign.Center)
+        .justifyContent(FlexAlign.Start)
+        .hitTestBehavior(HitTestMode.Transparent)
       }
       .align(Alignment.Center)
       .width(this.watchSize)

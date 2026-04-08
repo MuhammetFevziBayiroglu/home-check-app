@@ -1,5 +1,7 @@
 import commonUtils from '../common/utils/CommonUtils';
 import dbUtils, { ItemInsertInput } from '../common/utils/DBUtils';
+import { CommonConstants } from '../common/constants/CommonConstants';
+import { LengthMetrics } from '@kit.ArkUI';
 
 @Builder
 export function AddItemPageBuilder(name?: string, param?: Object) {
@@ -94,6 +96,22 @@ export struct AddItemPage {
                 .border({ width: 1, color: this.name.trim().length > 0 ? '#10B981' : '#E5E7EB' })
                 .borderRadius(10)
                 .padding({ left: 10, right: 10 })
+
+              Flex({ wrap: FlexWrap.Wrap, space: { main: LengthMetrics.vp(8), cross: LengthMetrics.vp(8) } }) {
+                ForEach(CommonConstants.BUILTIN_ITEMS, (item: string) => {
+                  Button(item)
+                    .fontSize(12)
+                    .fontColor(this.name === item ? Color.White : '#374151')
+                    .backgroundColor(this.name === item ? '#2563EB' : '#E5E7EB')
+                    .height(28)
+                    .padding({ left: 12, right: 12 })
+                    .onClick(() => {
+                      this.name = item;
+                    })
+                }, (item: string) => item)
+              }
+              .width('100%')
+              .margin({ top: 4 })
             }
 
             Column({ space: 6 }) {
