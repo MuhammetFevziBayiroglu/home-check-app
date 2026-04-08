@@ -4,6 +4,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { LoadingCard, DoneCard } from '../components/ItemBuilders';
 import { ItemCardView } from '../components/ItemCardView';
 import { PageItem } from '../model/PageItem';
+import { promptAction } from '@kit.ArkUI';
 
 type LogArg = string | number | boolean;
 
@@ -327,10 +328,18 @@ export struct CheckHome {
     const options: string[] = ['1s', '2s', '3s', '5s', '10s'];
     const values: number[] = [1000, 2000, 3000, 5000, 10000];
 
-    this.getUIContext().getPromptAction().showActionMenu({
+    const menuOptions: promptAction.ActionMenuOptions = {
       title: 'Hold time',
-      buttons: options.map(o => ({ text: o, color: '#2563EB' }))
-    }).then(res => {
+      buttons: [
+        { text: '1s', color: '#2563EB' },
+        { text: '2s', color: '#2563EB' },
+        { text: '3s', color: '#2563EB' },
+        { text: '5s', color: '#2563EB' },
+        { text: '10s', color: '#2563EB' }
+      ]
+    };
+
+    this.getUIContext().getPromptAction().showActionMenu(menuOptions).then(res => {
       if (res.index >= 0 && res.index < values.length) {
         this.holdTime = values[res.index];
         commonUtils.showToast(`Hold time set to ${options[res.index]}`);
