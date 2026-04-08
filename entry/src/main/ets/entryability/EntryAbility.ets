@@ -11,6 +11,7 @@ export default class EntryAbility extends UIAbility {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
 
     AppStorage.setOrCreate('AppContext', this.context as common.UIAbilityContext);
+    PersistentStorage.persistProp('holdTime', 5000);
 
     dbUtils.createDB().catch(() => {
       hilog.error(DOMAIN, 'DB', 'createDB failed at onCreate');

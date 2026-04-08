@@ -4,6 +4,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { LoadingCard, DoneCard } from '../components/ItemBuilders';
 import { ItemCardView } from '../components/ItemCardView';
 import { PageItem } from '../model/PageItem';
+import { promptAction } from '@kit.ArkUI';
 
 type LogArg = string | number | boolean;
 
@@ -15,7 +16,7 @@ export function CheckHomeBuilder(name?: string, param?: Object) {
 @Component
 export struct CheckHome {
   private stack!: NavPathStack;
-  private static readonly HOLD_MS: number = 5000;
+  @StorageLink('holdTime') holdTime: number = 5000;
   private static readonly TIMEOUT_MS: number = 5000;
   private readonly watchSize: string = '466px';
   private readonly DEBUG: boolean = true;
@@ -233,7 +234,7 @@ export struct CheckHome {
     this.holdStartIndex = this.pageIndex;
     this.holdFinishedByTimer = false;
     const start: number = Date.now();
-    const total: number = CheckHome.HOLD_MS;
+    const total: number = this.holdTime;
 
     this.dbg('startHold DOWN at index', this.pageIndex, 'total ms=', total);
 
@@ -323,16 +324,69 @@ export struct CheckHome {
     return !!(cur && Number(cur.item.isCritical) === 1);
   }
 
+  private showHoldTimeSettings(): void {
+    const options: string[] = ['1s', '2s', '3s', '5s', '10s'];
+    const values: number[] = [1000, 2000, 3000, 5000, 10000];
+
+    const menuOptions: promptAction.ActionMenuOptions = {
+      title: 'Hold time',
+      buttons: [
+        { text: '1s', color: '#2563EB' },
+        { text: '2s', color: '#2563EB' },
+        { text: '3s', color: '#2563EB' },
+        { text: '5s', color: '#2563EB' },
+        { text: '10s', color: '#2563EB' }
+      ]
+    };
+
+    this.getUIContext().getPromptAction().showActionMenu(menuOptions).then(res => {
+      if (res.index >= 0 && res.index < values.length) {
+        this.holdTime = values[res.index];
+        commonUtils.showToast(`Hold time set to ${options[res.index]}`);
+      }
+    });
+  }
+
   build(): void {
     NavDestination() {
       Stack() {
         Column() {
+          if (this.loading) {
+            LoadingCard()
+          } else if (!this.getCur()) {
+            DoneCard(this.stack)
+          } else {
+            Column() {
+              ItemCardView({
+                cat: this.getCur()!.cat,
+                it: this.getCur()!.item,
+                isCritical: this.isCurCritical()
+              })
+            }
+            .width('100%')
+            .height('100%')
+            .justifyContent(FlexAlign.Center)
+          }
         }
         .justifyContent(FlexAlign.Center)
         .width(this.watchSize)
         .height(this.watchSize)
         .clipShape(Circle({ width: '100%', height: '100%' }))
         .backgroundColor(this.isCurCritical() ? '#DD0303' : '#FFFFFF')
+        .onTouch((event: TouchEvent) => {
+          const cur = this.getCur();
+          if (!cur) {
+            this.dbg('onTouch ignored: no current item (pages empty)');
+            return;
+          }
+          if (event.type === TouchType.Down) {
+            this.startHold();
+          } else if (event.type === TouchType.Up) {
+            this.cancelHold();
+          } else if (event.type === TouchType.Cancel) {
+            this.cancelHold();
+          }
+        })
 
         Column() {
           Progress({ value: this.holdProgress, total: 100, type: ProgressType.Ring })
@@ -348,41 +402,14 @@ export struct CheckHome {
         .alignItems(HorizontalAlign.Center)
         .justifyContent(FlexAlign.Center)
         .visibility(this.holding ? Visibility.Visible : Visibility.Hidden)
+        .hitTestBehavior(HitTestMode.None)
 
-        Column() {
-          if (this.loading) {
-            LoadingCard()
-          } else if (!this.getCur()) {
-            DoneCard(this.stack)
-          } else {
-            Column() {
-              ItemCardView({
-                cat: this.getCur()!.cat,
-                it: this.getCur()!.item,
-                isCritical: this.isCurCritical()
-              })
-            }
-            .onTouch((event: TouchEvent) => {
-              const cur = this.getCur();
-              if (!cur) {
-                this.dbg('onTouch ignored: no current item (pages empty)');
-                return;
-              }
-              if (event.type === TouchType.Down) {
-                this.startHold();
-              } else if (event.type ===
-              TouchType.Up) {
-                this.cancelHold();
-              } else if (event.type === TouchType.Cancel) {
-                this.cancelHold();
-              }
-            })
-          }
-        }
-        .width('100%')
-        .height('100%')
-        .alignItems(HorizontalAlign.Center)
-        .justifyContent(FlexAlign.Center)
+        Image($r('app.media.settings_ic'))
+          .width(28)
+          .height(28)
+          .position({ x: '50%', y: 40 })
+          .translate({ x: '-50%' })
+          .onClick(() => this.showHoldTimeSettings())
       }
       .align(Alignment.Center)
       .width(this.watchSize)

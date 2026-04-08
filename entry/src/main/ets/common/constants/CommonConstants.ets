@@ -47,4 +47,6 @@ export class CommonConstants {
   static readonly NUMBER_500 = 500;
 
   static readonly INIT_NAME = 'New item';
+
+  static readonly BUILTIN_ITEMS = ['keys', 'wallet', 'phone', 'charger', 'stove', 'lights'];
 }
