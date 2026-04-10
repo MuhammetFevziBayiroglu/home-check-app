@@ -404,12 +404,14 @@ export struct CheckHome {
         .visibility(this.holding ? Visibility.Visible : Visibility.Hidden)
         .hitTestBehavior(HitTestMode.None)
 
-        Image($r('app.media.settings_ic'))
-          .width(28)
-          .height(28)
-          .position({ x: '50%', y: 40 })
-          .translate({ x: '-50%' })
-          .onClick(() => this.showHoldTimeSettings())
+        if (this.getCur()) {
+          Image($r('app.media.settings_ic'))
+            .width(28)
+            .height(28)
+            .position({ x: '50%', y: 40 })
+            .translate({ x: '-50%' })
+            .onClick(() => this.showHoldTimeSettings())
+        }
       }
       .align(Alignment.Center)
       .width(this.watchSize)
