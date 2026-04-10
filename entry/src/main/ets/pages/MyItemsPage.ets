@@ -139,14 +139,15 @@ export struct MyItemsPage {
   private showItemActions(row: ItemRow): void {
     this.itemActionsDialog = new CustomDialogController({
       builder: ItemActionsDialog({
-        row: row,
-        onEdit: (r: ItemRow) => this.openEditDialog(r),
+        itemName: row.name,
+        itemId: row.id,
+        onEdit: () => this.openEditDialog(row),
         onDelete: (id: number) => {
           void this.onDelete(id);
         }
       }),
       autoCancel: true,
-      alignment: DialogAlignment.Center,
+      alignment: DialogAlignment.Bottom,
       onWillDismiss: (a: DismissDialogAction): void => {
         if (a.reason === DismissReason.PRESS_BACK || a.reason === DismissReason.TOUCH_OUTSIDE) {
           a.dismiss();

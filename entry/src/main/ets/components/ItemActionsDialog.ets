@@ -1,10 +1,9 @@
-import { ItemRow } from '../common/utils/DBUtils';
-
 @CustomDialog
 export struct ItemActionsDialog {
   controller?: CustomDialogController;
-  row!: ItemRow;
-  onEdit: (row: ItemRow) => void = () => {};
+  itemName: string = '';
+  itemId: number = 0;
+  onEdit: () => void = () => {};
   onDelete: (id: number) => void = () => {};
 
   build() {
@@ -15,7 +14,7 @@ export struct ItemActionsDialog {
         .fontColor('#111827')
         .margin({ bottom: 4 })
 
-      Text(this.row.name)
+      Text(this.itemName)
         .fontSize(12)
         .fontColor('#6B7280')
         .textAlign(TextAlign.Center)
@@ -29,7 +28,7 @@ export struct ItemActionsDialog {
         .backgroundColor('#2563EB')
         .fontColor(Color.White)
         .onClick(() => {
-          this.onEdit(this.row);
+          this.onEdit();
           this.controller?.close();
         })
 
@@ -40,7 +39,7 @@ export struct ItemActionsDialog {
         .backgroundColor('#EF4444')
         .fontColor(Color.White)
         .onClick(() => {
-          this.onDelete(this.row.id);
+          this.onDelete(this.itemId);
           this.controller?.close();
         })
 
