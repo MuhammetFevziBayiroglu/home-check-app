@@ -16,7 +16,7 @@ export struct EditItemDialog {
   // 1. İsim Alanı Builder'ı
   @Builder NameInputSection() {
     Column({ space: 6 }) {
-      Text('Name').fontSize(14).fontColor('#111827')
+      Text('Name').fontSize(12).fontColor('#111827')
 
       TextInput({ text: this.name, placeholder: 'e.g., Windows, Iron…' })
         .height(40)
@@ -35,7 +35,7 @@ export struct EditItemDialog {
         .padding({ left: 10, right: 10 })
 
       if (this.touched && this.name.trim().length === 0) {
-        Text('Name is required.').fontSize(12).fontColor('#DC2626')
+        Text('Name is required.').fontSize(10).fontColor('#DC2626')
       }
     }
     .alignItems(HorizontalAlign.Start)
@@ -46,7 +46,7 @@ export struct EditItemDialog {
     Column({ space: 16 }) {
       // Category
       Column({ space: 6 }) {
-        Text('Category').fontSize(14).fontColor('#111827')
+        Text('Category').fontSize(12).fontColor('#111827')
         TextInput({ text: this.category, placeholder: 'Optional (e.g., Kitchen)' })
           .height(40)
           .maxLines(1)
@@ -58,7 +58,7 @@ export struct EditItemDialog {
       }.alignItems(HorizontalAlign.Start).width('100%')
 
       Column({ space: 6 }) {
-        Text('Note').fontSize(14).fontColor('#111827')
+        Text('Note').fontSize(12).fontColor('#111827')
         TextInput({ text: this.note, placeholder: 'Optional note' })
           .height(96)
           .maxLines(4)
@@ -78,11 +78,11 @@ export struct EditItemDialog {
         Toggle({ type: ToggleType.Switch, isOn: this.isCritical })
           .onChange((val: boolean) => { this.isCritical = val; })
         Text(this.isCritical ? 'Marked as critical' : 'Mark as critical')
-          .fontSize(14).fontColor('#111827')
+          .fontSize(12).fontColor('#111827')
       }.alignItems(VerticalAlign.Center)
 
       Text('Changes will be saved for this item.')
-        .fontSize(12).fontColor('#6B7280').margin({ top: 4 })
+        .fontSize(10).fontColor('#6B7280').margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
   }

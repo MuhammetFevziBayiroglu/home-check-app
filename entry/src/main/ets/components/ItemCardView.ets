@@ -5,6 +5,7 @@ export struct ItemCardView {
   @Prop cat: string;
   @Prop it: ItemRow;
   @Prop isCritical: boolean;
+  @StorageProp('holdTime') holdTime: number = 5000;
 
   build(): void {
     Column({ space: 10 }) {
@@ -27,7 +28,7 @@ export struct ItemCardView {
           .maxLines(3)
       }
 
-      Text('Press & hold 5s to Check')
+      Text(`Press & hold ${this.holdTime / 1000}s to Check`)
         .fontSize(12)
         .fontColor('#6B7280')
         .margin({ top: 6 })

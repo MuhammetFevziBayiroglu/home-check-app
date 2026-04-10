@@ -1,6 +1,7 @@
 import dbUtils, { ItemRow } from '../common/utils/DBUtils';
 import commonUtils from '../common/utils/CommonUtils';
 import { EditItemDialog } from '../components/EditItemDialog';
+import { ItemActionsDialog } from '../components/ItemActionsDialog';
 import { EditItemData } from '../model/EditItemData';
 import { BuildControls, BuildEmpty, BuildItemCard, ItemMenuBuilder } from '../components/MyItemsView';
 import { ArcList,ArcListItem,ArcListAttribute,ArcListItemAttribute,ComponentContent,LengthMetrics } from '@kit.ArkUI';
@@ -29,6 +30,7 @@ export struct MyItemsPage {
   @State onlyCritical: boolean = false;
   private editingId: number | null = null;
   private editDialog: CustomDialogController | null = null;
+  private itemActionsDialog: CustomDialogController | null = null;
   private readonly watchSize: string = '466px';
   private readonly listSize: string = '414px';
   private ctx?: UIContext;
@@ -135,34 +137,23 @@ export struct MyItemsPage {
   }
 
   private showItemActions(row: ItemRow): void {
-    this.ctx?.showAlertDialog({
-      title: 'Item actions',
-      subtitle: row.name,
-      message: 'Select an action',
+    this.itemActionsDialog = new CustomDialogController({
+      builder: ItemActionsDialog({
+        row: row,
+        onEdit: (r: ItemRow) => this.openEditDialog(r),
+        onDelete: (id: number) => {
+          void this.onDelete(id);
+        }
+      }),
       autoCancel: true,
-      alignment: DialogAlignment.Bottom,
-      gridCount: 4,
-      offset: { dx: 0, dy: -20 },
-      primaryButton: {
-        value: 'Delete',
-        action: (): void => {
-          void this.onDelete(row.id);
-        }
-      },
-      secondaryButton: {
-        value: 'Edit',
-        action: (): void => {
-          this.openEditDialog(row);
-        }
-      },
-      cancel: (): void => {
-      },
+      alignment: DialogAlignment.Center,
       onWillDismiss: (a: DismissDialogAction): void => {
         if (a.reason === DismissReason.PRESS_BACK || a.reason === DismissReason.TOUCH_OUTSIDE) {
           a.dismiss();
         }
       }
-    })
+    });
+    this.itemActionsDialog.open();
   }
 
   openEditDialog(row: ItemRow): void {
