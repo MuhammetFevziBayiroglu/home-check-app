@@ -20,7 +20,7 @@ export function LoadingCard() {
 @Builder
 export function DoneCard(stack: NavPathStack) {
   Column({ space: 12 }) {
-    Text('You Can Check All Items')
+    Text('You Can Checked All Items!')
       .fontSize(20).fontWeight(FontWeight.Medium).fontColor('#111827');
 
     Button('Done')
